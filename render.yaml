@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: kafka-control-dashboard
+    runtime: docker
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: SPRING_KAFKA_BOOTSTRAP_SERVERS
+        value: localhost:9092
+      - key: PORT
+        value: 8080
+    healthCheckPath: /api/health

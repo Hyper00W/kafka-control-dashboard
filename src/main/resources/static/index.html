@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>KAFKA CONTROL SYSTEM // spring-kafka sample-01</title>
+  <meta name="description" content="Industrial control dashboard for Spring Kafka producer-consumer monitoring — topic1 / DLT pipeline" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@300;400;600;700&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="style.css" />
+</head>
+<body>
+
+  <!-- ═══════════════════════════════════════════════ HEADER BAR -->
+  <header id="topbar">
+    <div class="topbar-left">
+      <span class="sys-label">SYS</span>
+      <span class="sys-name">KAFKA CONTROL SYSTEM</span>
+      <span class="sys-sep">//</span>
+      <span class="sys-sub">spring-kafka · sample-01</span>
+    </div>
+    <div class="topbar-right">
+      <span class="indicator" id="broker-indicator">
+        <span class="dot" id="broker-dot"></span>
+        <span id="broker-status-text">BROKER — CONNECTING</span>
+      </span>
+      <span class="clock" id="clock"></span>
+    </div>
+  </header>
+
+  <!-- ═══════════════════════════════════════════════ MAIN GRID -->
+  <main id="dashboard">
+
+    <!-- ── STAT PANELS ─────────────────────────────────────────── -->
+    <section id="stat-grid">
+      <div class="stat-panel" id="stat-produced">
+        <div class="stat-label">PRODUCED</div>
+        <div class="stat-value" id="val-produced">0</div>
+        <div class="stat-sub">topic1 → sent</div>
+      </div>
+      <div class="stat-panel" id="stat-consumed">
+        <div class="stat-label">CONSUMED</div>
+        <div class="stat-value" id="val-consumed">0</div>
+        <div class="stat-sub">fooGroup listener</div>
+      </div>
+      <div class="stat-panel" id="stat-errors">
+        <div class="stat-label">ERRORS</div>
+        <div class="stat-value error-val" id="val-errors">0</div>
+        <div class="stat-sub">retry / backoff</div>
+      </div>
+      <div class="stat-panel" id="stat-dlt">
+        <div class="stat-label">DLT RECEIVED</div>
+        <div class="stat-value warn-val" id="val-dlt">0</div>
+        <div class="stat-sub">topic1-dlt</div>
+      </div>
+    </section>
+
+    <!-- ── PRODUCER CONTROL PANEL ──────────────────────────────── -->
+    <section class="panel" id="producer-panel">
+      <div class="panel-header">
+        <span class="panel-title">PRODUCER CONTROL</span>
+        <span class="panel-badge">POST /send/foo/{payload}</span>
+      </div>
+      <div class="panel-body">
+        <div class="control-row">
+          <label class="field-label" for="msg-input">PAYLOAD</label>
+          <input
+            id="msg-input"
+            type="text"
+            class="field-input"
+            placeholder="e.g. bar  |  fail  |  hello"
+            maxlength="120"
+            autocomplete="off"
+            spellcheck="false"
+          />
+          <button class="btn-primary" id="btn-send" onclick="sendMessage()">
+            ▶ SEND
+          </button>
+          <button class="btn-warn" id="btn-fail" onclick="sendFail()">
+            ✕ SEND FAIL
+          </button>
+        </div>
+        <div class="control-row mt8">
+          <label class="field-label">TOPIC</label>
+          <span class="field-readonly">topic1</span>
+          <label class="field-label ml24">GROUP</label>
+          <span class="field-readonly">fooGroup</span>
+          <label class="field-label ml24">DLT</label>
+          <span class="field-readonly">topic1-dlt</span>
+          <label class="field-label ml24">RETRIES</label>
+          <span class="field-readonly">2 × 1s</span>
+        </div>
+        <div id="send-response" class="response-line hidden"></div>
+      </div>
+    </section>
+
+    <!-- ── EVENT LOG TABLE ─────────────────────────────────────── -->
+    <section class="panel" id="events-panel">
+      <div class="panel-header">
+        <span class="panel-title">EVENT LOG</span>
+        <span class="panel-badge" id="event-count">0 RECORDS</span>
+        <div class="panel-controls">
+          <button class="btn-sm" onclick="refreshEvents()">↺ REFRESH</button>
+          <button class="btn-sm" onclick="clearLog()">⊘ CLEAR VIEW</button>
+          <label class="toggle-label">
+            <input type="checkbox" id="auto-refresh" checked /> AUTO-POLL 3s
+          </label>
+        </div>
+      </div>
+      <div class="panel-body table-wrap">
+        <table id="event-table">
+          <thead>
+            <tr>
+              <th>ID</th>
+              <th>TIMESTAMP</th>
+              <th>TYPE</th>
+              <th>TOPIC</th>
+              <th>PAYLOAD</th>
+              <th>STATUS</th>
+            </tr>
+          </thead>
+          <tbody id="event-tbody">
+            <tr class="empty-row">
+              <td colspan="6">// NO EVENTS — send a message to begin</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- ── SYSTEM INFO PANEL ───────────────────────────────────── -->
+    <section class="panel" id="sys-panel">
+      <div class="panel-header">
+        <span class="panel-title">SYSTEM INFO</span>
+      </div>
+      <div class="panel-body sys-grid">
+        <div class="sys-row"><span class="sys-key">BROKER</span><span class="sys-val" id="si-broker">localhost:9092</span></div>
+        <div class="sys-row"><span class="sys-key">SERIALIZER</span><span class="sys-val">JsonSerializer</span></div>
+        <div class="sys-row"><span class="sys-key">DESERIALIZER</span><span class="sys-val">ByteArrayDeserializer</span></div>
+        <div class="sys-row"><span class="sys-key">CONVERTER</span><span class="sys-val">JsonMessageConverter</span></div>
+        <div class="sys-row"><span class="sys-key">ERROR HANDLER</span><span class="sys-val">DefaultErrorHandler / DeadLetterPublishingRecoverer</span></div>
+        <div class="sys-row"><span class="sys-key">BACKOFF</span><span class="sys-val">FixedBackOff(1000ms, 2)</span></div>
+        <div class="sys-row"><span class="sys-key">TOPIC PARTITIONS</span><span class="sys-val">1</span></div>
+        <div class="sys-row"><span class="sys-key">REPLICATION</span><span class="sys-val">1</span></div>
+        <div class="sys-row"><span class="sys-key">FRAMEWORK</span><span class="sys-val">Spring Kafka 3.2.x</span></div>
+        <div class="sys-row"><span class="sys-key">JAVA</span><span class="sys-val">17+</span></div>
+      </div>
+    </section>
+
+    <!-- ── TERMINAL / LOG ──────────────────────────────────────── -->
+    <section class="panel" id="terminal-panel">
+      <div class="panel-header">
+        <span class="panel-title">TERMINAL LOG</span>
+        <button class="btn-sm" onclick="clearTerminal()">⊘ CLEAR</button>
+      </div>
+      <div class="panel-body">
+        <div id="terminal-output">
+          <div class="term-line term-info">[ SYS ] Spring Kafka Control Dashboard initializing...</div>
+          <div class="term-line term-info">[ SYS ] Connecting to broker at localhost:9092</div>
+          <div class="term-line term-info">[ SYS ] Polling /api/stats and /api/events every 3s</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <footer id="footer">
+    <span>SPRING-KAFKA // SAMPLE-01</span>
+    <span>BROKER: localhost:9092</span>
+    <span id="footer-total">TOTAL EVENTS: 0</span>
+    <span>TOPIC: topic1 | DLT: topic1-dlt</span>
+  </footer>
+
+  <script src="app.js"></script>
+</body>
+</html>
