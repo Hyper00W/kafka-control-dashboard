@@ -6,6 +6,7 @@ A **Spring Kafka** producer-consumer demo with an industrial-style control dashb
 ![Java](https://img.shields.io/badge/Java-17-orange?style=flat-square)
 ![Spring Boot](https://img.shields.io/badge/Spring%20Boot-3.2.5-brightgreen?style=flat-square)
 ![Spring Kafka](https://img.shields.io/badge/Spring%20Kafka-3.1.4-brightgreen?style=flat-square)
+[![Deploy to Render](https://render.com/images/deploy-to-render-button.svg)](https://render.com/deploy?repo=https://github.com/Hyper00W/kafka-control-dashboard)
 
 ## Features
 
